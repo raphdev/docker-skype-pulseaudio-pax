@@ -1,5 +1,5 @@
 FROM debian:stable
-MAINTAINER Tom Parys "tom.parys+copyright@gmail.com"
+MAINTAINER Raphael Salas "rsalas809@gmail.com"
 
 # Tell debconf to run in non-interactive mode
 ENV DEBIAN_FRONTEND noninteractive
@@ -17,11 +17,16 @@ RUN apt-get install -y libpulse0:i386 pulseaudio:i386
 # We need ssh to access the docker container, wget to download skype
 RUN apt-get install -y openssh-server wget 
 
+# We need paxctl to modify Skype binary
+RUN apt-get install -y paxctl
+
 # Install Skype
 RUN wget http://download.skype.com/linux/skype-debian_4.3.0.37-1_i386.deb -O /usr/src/skype.deb
 RUN dpkg -i /usr/src/skype.deb || true
 RUN apt-get install -fy						# Automatically detect and install dependencies
 
+# Remove PAX flags from Skype
+RUN paxctl -cme $(which skype)
 
 # Create user "docker" and set the password to "docker"
 RUN useradd -m -d /home/docker docker
@@ -38,7 +43,7 @@ RUN chown -R docker:docker /home/docker/.ssh
 
 # Set locale (fix locale warnings)
 RUN localedef -v -c -i en_US -f UTF-8 en_US.UTF-8 || true
-RUN echo "Europe/Prague" > /etc/timezone
+RUN echo "America/New_York" > /etc/timezone
 
 # Set up the launch wrapper - sets up PulseAudio to work correctly
 RUN echo 'export PULSE_SERVER="tcp:localhost:64713"' >> /usr/local/bin/skype-pulseaudio
